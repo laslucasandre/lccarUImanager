@@ -9,23 +9,10 @@ set(CMAKE_C_STANDARD 11)#C11
 set(CMAKE_CXX_STANDARD 17)#C17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(LCCAR_PROJECT_NAME
-    lccarUImanager
-)
-
-set(LCCAR_SOURCE_DIR
-    src
-)
-
-set(LCCAR_SOURCE_INCLUDE
-    include
-)
-
-file(GLOB_RECURSE INCLUDES "./*.h" )
-file(GLOB_RECURSE INCLUDES ${LCCAR_SOURCE_INCLUDE}"./*.h" )
-
 set(LVGL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/lvgl/)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+file(GLOB_RECURSE INCLUDES "./*.h" )
 
 add_subdirectory(lvgl)
 add_subdirectory(lv_drivers)
@@ -33,54 +20,31 @@ add_subdirectory(lv_drivers)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin) 
 SET(CMAKE_CXX_FLAGS "-O3")
 
-message(STATUS "Extra information")
-message(STATUS "PROJECT_SOURCE_DIR:> " ${PROJECT_SOURCE_DIR})
-message(STATUS "CMAKE_TOOLCHAIN_FILE:> " ${CMAKE_TOOLCHAIN_FILE})
-message(STATUS "SOURCES:> " ${SOURCES} )
-message(STATUS "INCLUDES:> " ${INCLUDES})
-
 find_package(SDL2 REQUIRED SDL2)
-message(STATUS "SDL Default REQUIRED")
-message(STATUS "SDL2_INCLUDE_DIRS:> " ${SDL2_INCLUDE_DIRS})
-message(STATUS "SDL2_LIBRARIES:> " ${SDL2_LIBRARIES})
+find_package(Threads)
 
 set(SDL2_INCLUDE_DIRS_HARDCODE C:/SysGCC/raspberry10.2.1.toolchain/include/SDL2)
 set(SDL2_LIB_DIRS_HARDCODE C:/SysGCC/raspberry10.2.1.toolchain/lib)
-set(LIBRARIES_FROM_REFERENCES "")
-
-message(STATUS "SDL HARDCODE")
-message(STATUS "SDL2_INCLUDE_DIRS_HARDCODE:> " ${SDL2_INCLUDE_DIRS_HARDCODE})
-message(STATUS "SDL2_LIB_DIRS_HARDCODE:> " ${SDL2_LIB_DIRS_HARDCODE})
 
 include_directories(${SDL2_INCLUDE_DIRS_HARDCODE})
 
 add_compile_definitions(LV_CONF_INCLUDE_SIMPLE)
 
-set(MANAGERUI_SOURCE_DIR
-	managerUi/managerUi.cpp
-	managerUi/managerUi.h
-)
-
-set(LCCAR_SOURCE
-	${LCCAR_SOURCE_DIR}/lccarUImanager.cpp 			   
-	${LCCAR_SOURCE_DIR}/mouse_cursor_icon.c  
-)
-
-
-
-add_executable(${LCCAR_PROJECT_NAME}
-			   ${LCCAR_SOURCE}
-			   ${MANAGERUI_SOURCE_DIR}
+add_executable(lccarUImanager 
+			   src/lccarUImanager.cpp 			   
+			   src/mouse_cursor_icon.c  
+			   managerUi/managerUi.cpp
 			   ${SOURCES} 
 			   ${INCLUDES} )
 
-target_link_libraries(${LCCAR_PROJECT_NAME}  
+
+target_link_libraries(lccarUImanager 
 				      PRIVATE 
 					  lvgl 
 					  lvgl::examples 
 					  lvgl::demos 
 					  lvgl::drivers
-					  ${LIBRARIES_FROM_REFERENCES}
-					  ${SDL2_LIBRARIES})	
+					  ${SDL2_LIBRARIES}
+				      ${CMAKE_THREAD_LIBS_INIT})	
 
 add_custom_target (run COMMAND ${EXECUTABLE_OUTPUT_PATH}/main)

@@ -8,11 +8,35 @@
 #define SDL_MAIN_HANDLED /*To fix SDL's "undefined reference to WinMain" issue*/
 #include <SDL2/SDL.h>
 #include "../lvgl/lvgl.h"
+#include "../lvgl/examples/lv_examples.h"
+#include "../lvgl/demos/lv_demos.h"
 #include "../lv_drivers/sdl/sdl.h"
+
+#include <stdio.h>
+
+static const lv_font_t * font_large;
+
+static int conter = 0;
+char buf[20] = "-";
+static lv_obj_t * labelName;
+
+bool isUiInitializedOk {false};
+
 
 void managerUi::buildUi(void)
 {
 	std::cout << "buildUi" << std::endl;
+	
+	thRunUi = std::thread([this]() { 
+		std::cout << "thRunUi" << std::endl;
+		runUi();
+	});	
+
+}
+
+void managerUi::runUi(void)
+{
+	std::cout << "runUi" << std::endl;
 	
 	/*Initialize LVGL*/
 	lv_init();
@@ -20,6 +44,36 @@ void managerUi::buildUi(void)
 	/*Initialize the HAL (display, input devices, tick) for LVGL*/
 	hal_init();	
 	
+	lv_example_display();
+	
+	static int count = 0;
+	
+	while (1)
+	{
+		/* Periodically call the lv_task handler.
+		 * It could be done in a timer interrupt or an OS task too.*/		
+		lv_task_handler();
+		usleep(5 * 1000);
+//		if (count > 200)
+//		{
+//			
+//			std::cout << "count: " << count << std::endl;
+//			count = 0;
+//		}
+//		count++;
+	}	
+	
+}
+
+void managerUi::set_lv_example_label_CAR(void)
+{
+	conter++;
+//	lv_snprintf(buf, sizeof(buf), "%d", conter);
+	printf("set_lv_example_label_CAR %d %s\n", conter, buf);
+//	lv_label_set_text(labelName, buf);
+	lv_label_set_text_fmt(labelName, "Value: %d", conter);
+//	lv_label_set_text_static(labelName, buf);
+
 }
 
 void managerUi::hal_init(void)
@@ -79,3 +133,58 @@ void managerUi::hal_init(void)
 	lv_img_set_src(cursor_obj, &mouse_cursor_icon); /*Set the image source*/
 	lv_indev_set_cursor(mouse_indev, cursor_obj); /*Connect the image  object to the driver*/
 }
+	
+void managerUi::lv_example_display(void)
+{
+//	/*Create an Arc*/
+//	lv_obj_t * arc = lv_arc_create(lv_scr_act());
+//	lv_obj_set_size(arc, 150, 150);
+//	lv_arc_set_rotation(arc, 135);
+//	lv_arc_set_bg_angles(arc, 0, 270);
+//	lv_arc_set_value(arc, 40);
+//	lv_obj_center(arc);
+
+//	lv_obj_t * label1 = lv_label_create(lv_scr_act());
+//	lv_label_set_long_mode(label1, LV_LABEL_LONG_WRAP); /*Break the long lines*/
+//	lv_label_set_recolor(label1, true); /*Enable re-coloring by commands in the text*/
+//	lv_label_set_text(label1,
+//		"#0000ff Re-color# #ff00ff words# #ff0000 of a# label, align the lines to the center "
+//		                "and wrap long text automatically.");
+//	lv_obj_set_width(label1, 150); /*Set smaller width to make the lines wrap*/
+//	lv_obj_set_style_text_align(label1, LV_TEXT_ALIGN_CENTER, 0);
+//	lv_obj_align(label1, LV_ALIGN_CENTER, 0, -40);
+//
+//	lv_obj_t * label2 = lv_label_create(lv_scr_act());
+//	lv_label_set_long_mode(label2, LV_LABEL_LONG_SCROLL_CIRCULAR); /*Circular scroll*/
+//	lv_obj_set_width(label2, 150);
+//	lv_label_set_text(label2, "It is a circularly scrolling text. ");
+//	lv_obj_align(label2, LV_ALIGN_CENTER, 0, 40);
+	
+	font_large = &lv_font_montserrat_20;
+
+	char *ptr = buf;
+
+	labelName = lv_label_create(lv_scr_act());
+	
+	lv_label_set_long_mode(labelName, LV_LABEL_LONG_WRAP); /*Break the long lines*/
+	lv_label_set_recolor(labelName, false); /*Enable re-coloring by commands in the text*/
+	lv_label_set_text(labelName, ptr);
+	
+	lv_obj_set_style_text_font(labelName, font_large, 0);
+	lv_obj_set_style_text_line_space(labelName, 8, 0);
+	lv_obj_set_style_text_color(labelName, lv_color_hex(0xFF0000), 0);
+	lv_obj_set_style_text_align(labelName, LV_TEXT_ALIGN_LEFT, 0);
+	
+	lv_obj_set_width(labelName, 180);
+	
+	lv_obj_align(labelName, LV_ALIGN_BOTTOM_RIGHT, 0, -10);	
+	
+	isUiInitializedOk = true;
+	
+}
+
+bool managerUi::uiAvailable(void)
+{
+	return isUiInitializedOk;
+}
+
