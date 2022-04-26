@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
+#include <atomic> 
+
 #include "managerUi.h"
 
 #define SDL_MAIN_HANDLED /*To fix SDL's "undefined reference to WinMain" issue*/
@@ -14,29 +16,19 @@
 
 #include <stdio.h>
 
+static std::mutex mtx;
 static const lv_font_t * font_large;
 
 static int conter = 0;
 char buf[20] = "-";
 static lv_obj_t * labelName;
 
-bool isUiInitializedOk {false};
+std::atomic_bool isUiInitializedOk {false};
 
 
 void managerUi::buildUi(void)
 {
-	std::cout << "buildUi" << std::endl;
-	
-	thRunUi = std::thread([this]() { 
-		std::cout << "thRunUi" << std::endl;
-		runUi();
-	});	
-
-}
-
-void managerUi::runUi(void)
-{
-	std::cout << "runUi" << std::endl;
+	std::cout << "buildUi - Start" << std::endl;
 	
 	/*Initialize LVGL*/
 	lv_init();
@@ -46,33 +38,59 @@ void managerUi::runUi(void)
 	
 	lv_example_display();
 	
+	std::thread uiThread([&] {
+		runUi();
+	});
+		
+	uiThread.detach();
+	
+	std::cout << "buildUi - end" << std::endl;
+	
+}
+
+void managerUi::runUi(void)
+{
+	std::cout << "runUi start" << std::endl;
+	
 	static int count = 0;
 	
 	while (1)
 	{
 		/* Periodically call the lv_task handler.
-		 * It could be done in a timer interrupt or an OS task too.*/		
+		 * It could be done in a timer interrupt or an OS task too.*/	
+		mtx.lock();
 		lv_task_handler();
+		mtx.unlock();
 		usleep(5 * 1000);
-//		if (count > 200)
-//		{
-//			
-//			std::cout << "count: " << count << std::endl;
-//			count = 0;
-//		}
-//		count++;
+		if (count > 200)
+		{		
+			std::cout << "count: " << count << std::endl;
+			count = 0;	
+		}
+		count++;
 	}	
+	
+	std::cout << "runUi end" << std::endl;
 	
 }
 
-void managerUi::set_lv_example_label_CAR(void)
+void managerUi::set_lv_example_label_CAR(char *info)
 {
+	
 	conter++;
 //	lv_snprintf(buf, sizeof(buf), "%d", conter);
+//	lv_snprintf(buf, sizeof(buf), "%s", info);
+
 	printf("set_lv_example_label_CAR %d %s\n", conter, buf);
 //	lv_label_set_text(labelName, buf);
-	lv_label_set_text_fmt(labelName, "Value: %d", conter);
-//	lv_label_set_text_static(labelName, buf);
+//	lv_label_set_text_fmt(labelName, "Value: %d", conter);
+	
+	mtx.lock();
+	lv_label_set_text_fmt(labelName, "%s", info);
+	mtx.unlock();
+	
+	//lv_label_set_text_static(labelName, buf);
+	
 
 }
 
@@ -84,7 +102,9 @@ void managerUi::hal_init(void)
 	/*Create a display buffer*/
 	static lv_disp_draw_buf_t disp_buf1;
 	static lv_color_t buf1_1[SDL_HOR_RES * 100];
-	lv_disp_draw_buf_init(&disp_buf1, buf1_1, NULL, SDL_HOR_RES * 100);
+	static lv_color_t buf1_2[SDL_HOR_RES * 100];
+	lv_disp_draw_buf_init(&disp_buf1, buf1_1, buf1_2, SDL_HOR_RES * 100);	
+	//lv_disp_draw_buf_init(&disp_buf1, buf1_1, NULL, SDL_HOR_RES * 100);
 
 	/*Create a display*/
 	static lv_disp_drv_t disp_drv;
@@ -175,9 +195,9 @@ void managerUi::lv_example_display(void)
 	lv_obj_set_style_text_color(labelName, lv_color_hex(0xFF0000), 0);
 	lv_obj_set_style_text_align(labelName, LV_TEXT_ALIGN_LEFT, 0);
 	
-	lv_obj_set_width(labelName, 180);
+	lv_obj_set_width(labelName, 220);
 	
-	lv_obj_align(labelName, LV_ALIGN_BOTTOM_RIGHT, 0, -10);	
+	lv_obj_align(labelName, LV_ALIGN_BOTTOM_RIGHT, -50, -10);	
 	
 	isUiInitializedOk = true;
 	
