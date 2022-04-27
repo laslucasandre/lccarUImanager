@@ -30,30 +30,28 @@ int main(int argc, char *argv[])
 	cout << welcomeMessage << endl;
 	
 	time_t timer;
-	char buffer[26];
 	struct tm* tm_info;
+	char dateString[20];
+	char timeString[20];
+	
 	
 	managerUi UiObj;
 	
 	UiObj.buildUi();
 		
-	cout << "Low Cost CAR end" << endl;
-	
 	static int count = 0;
 	
-	while (1)
+	while (gExitSignal == 0)
 	{
 		timer = time(NULL);
 		tm_info = localtime(&timer);
 
-		strftime(buffer, 26, "%Y-%m-%d %H:%M:%S\0", tm_info);
-		puts(buffer);
-//		sprintf(buffer, "%d", count);
+		strftime(dateString, 20, "%d/%m/%Y\0", tm_info);
+		strftime(timeString, 20, "%H:%M:%S\0", tm_info);
 		
 		if (UiObj.uiAvailable())
 		{
-			cout << "set label count: " << count << endl;
-			UiObj.set_lv_example_label_CAR(buffer);
+			UiObj.lv_set_datetime(dateString, timeString);
 		}
 		else
 		{
@@ -63,6 +61,13 @@ int main(int argc, char *argv[])
 		sleep(1);
 		count++;
 	}
+	
+	if (gExitSignal != 0) 
+	{
+		UiObj.uiFinish(false);
+	}
+	
+	cout << "Low Cost CAR end: gExitSignal = " << gExitSignal << endl;
 	
 	return gExitSignal;
 }

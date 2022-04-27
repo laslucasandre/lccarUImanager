@@ -34,6 +34,7 @@ add_executable(lccarUImanager
 			   src/lccarUImanager.cpp 			   
 			   src/mouse_cursor_icon.c  
 			   managerUi/managerUi.cpp
+			   managerUi/parktelltaleimagealpha100.c
 			   ${SOURCES} 
 			   ${INCLUDES} )
 
